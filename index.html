@@ -11,7 +11,8 @@
             background-color: #f4f4f4;
         }
         #chat-container {
-            width: 60%;
+            width: 90%;
+            max-width: 600px;
             margin: 20px auto;
             background: white;
             padding: 20px;
@@ -24,6 +25,7 @@
             border-radius: 5px;
             display: flex;
             align-items: center;
+            word-wrap: break-word;
         }
         .user {
             background: #d9d9d9;
@@ -37,24 +39,52 @@
         #input-container {
             display: flex;
             margin-top: 10px;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px;
+            margin: auto;
         }
         #user-input {
             flex-grow: 1;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: none;
             border-radius: 5px;
+            outline: none;
+            font-size: 14px;
         }
         #send-button {
             background: #444;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 10px;
             margin-left: 5px;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 14px;
         }
         #send-button:hover {
             background: #333;
+        }
+        @media (max-width: 600px) {
+            #chat-container {
+                width: 95%;
+                padding: 10px;
+            }
+            #input-container {
+                width: 95%;
+                padding: 5px;
+            }
+            #user-input {
+                font-size: 12px;
+            }
+            #send-button {
+                font-size: 12px;
+                padding: 8px;
+            }
         }
     </style>
 </head>
@@ -71,7 +101,8 @@
         const API_URL = "https://api.deepseek.com/v1/chat/completions";
         const chatContainer = document.getElementById("chat-container");
         const userInput = document.getElementById("user-input");
-        let hasDisplayedAction = false; 
+        let hasDisplayedAction = false;
+        let isBlocked = false;
 
         const actions = [
             "整理桌上的文件。",
@@ -103,6 +134,8 @@
         }
 
         function sendMessage() {
+            if (isBlocked) return;
+
             let message = userInput.value.trim();
             if (!message) return;
             addMessage(message, "user");
@@ -114,11 +147,12 @@
             chatContainer.appendChild(loadingMsg);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            const badWords = ["骂", "打", "踢", "攻击", "侮辱"];
+            const badWords = ["骂", "打", "踢", "攻击", "侮辱", "暴力", "殴打", "杀", "踹", "扇"];
             if (badWords.some(word => message.includes(word))) {
                 setTimeout(() => {
                     loadingMsg.innerHTML = `<strong>AI纳雅:</strong> 纳雅喊来了保镖，把你架走了...`;
                     userInput.disabled = true;
+                    isBlocked = true;
                 }, 1000);
                 return;
             }
