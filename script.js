@@ -7,9 +7,9 @@ const sendButton = document.getElementById("send-button");
 let isWaitingForResponse = false; // 限制用户必须等 Naya 回复后才能输入
 let hasStarted = false; // 是否已显示初始状态
 
-// 监听回车发送消息
+// 监听 Enter 键
 function handleKeyPress(event) {
-    if (event.key === "Enter" && !isWaitingForResponse) {
+    if (event.key === "Enter") {
         sendMessage();
     }
 }
