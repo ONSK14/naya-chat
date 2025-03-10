@@ -2,41 +2,98 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>和 AI 纳雅对话</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI纳雅</title>
     <style>
-        body { font-family: Arial, sans-serif; width: 50%; margin: auto; padding: 20px; text-align: center; }
-        #output { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; background: #f8f8f8; text-align: left; }
-        input { width: 80%; padding: 10px; margin-top: 10px; }
-        button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        .message {
+            text-align: left;
+            padding: 8px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .user {
+            background-color: #d1e7dd;
+            text-align: right;
+        }
+        .ai {
+            background-color: #f8d7da;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h1>和 AI 纳雅对话</h1>
-    <div id="output">🌿 你正在和 **纳雅** 交流，请输入你的话：</div>
-    <input type="text" id="userInput" placeholder="输入你的话...">
+    <h1>AI纳雅</h1>
+    <div id="chat-container"></div>
+    <input type="text" id="userInput" placeholder="输入你的消息..." />
     <button onclick="sendMessage()">发送</button>
 
-    <!-- ✅ JavaScript 代码必须放在 body 末尾 -->
     <script>
-        function sendMessage() {
-            console.log("✅ sendMessage() 被调用了");
-            let input = document.getElementById("userInput").value;
+        const apiUrl = "https://tight-unit-2177.onskppx5.workers.dev/api/generate"; // 你的 Cloudflare Workers 地址
+
+        function appendMessage(text, sender) {
+            const chatContainer = document.getElementById("chat-container");
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", sender);
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById("userInput").value;
+            if (!userInput.trim()) return;
+
+            appendMessage(userInput, "user"); // 显示用户消息
             document.getElementById("userInput").value = "";
 
-            fetch(https://tight-unit-2177.onskppx5.workers.dev/api/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ input: input })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("✅ AI 服务器返回数据:", data);
-                let outputDiv = document.getElementById("output");
-                outputDiv.innerHTML += "<br><b>你：</b> " + input;
-                outputDiv.innerHTML += "<br><b>纳雅：</b> " + data.response;
-                outputDiv.scrollTop = outputDiv.scrollHeight;
-            })
-            .catch(error => console.error("❌ 请求失败:", error));
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ input: userInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error("服务器响应异常");
+                }
+
+                const data = await response.json();
+                appendMessage(data.response, "ai"); // 显示 AI 回复
+
+            } catch (error) {
+                appendMessage("⚠️ 出错了: " + error.message, "ai");
+            }
         }
     </script>
 </body>
