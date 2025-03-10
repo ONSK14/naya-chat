@@ -4,86 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>电子Naya</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-        }
-        #chat-container {
-            width: 80%;
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .message {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .user {
-            background-color: #ccc;
-            justify-content: flex-end;
-        }
-        .naya {
-            background-color: #444;
-            color: white;
-            justify-content: flex-start;
-        }
-        .message-content {
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 75%;
-        }
-        .user .message-content {
-            background: #e0e0e0;
-        }
-        .naya .message-content {
-            background: #333;
-            color: white;
-        }
-        #input-container {
-            display: flex;
-            margin-top: 10px;
-            width: 100%;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background: #444;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:disabled {
-            background: #888;
-            cursor: not-allowed;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-    <h1>电子Naya</h1>
+    <h1>电子<span class="bold">Naya</span></h1>
     <div id="chat-container">
-        <div id="messages"></div>
+        <div id="chat-box"></div>
         <div id="input-container">
             <input type="text" id="user-input" placeholder="输入你的消息..." onkeypress="handleKeyPress(event)">
-            <button id="send-btn" onclick="sendMessage()">发送</button>
+            <button id="send-button" onclick="sendMessage()">发送</button>
         </div>
     </div>
-
     <script src="script.js"></script>
-
+    <script>
+        // **自动初始化 Naya 的初始消息**
+        window.onload = function() {
+            initializeChat();
+        };
+    </script>
 </body>
 </html>
