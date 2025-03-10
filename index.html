@@ -7,15 +7,15 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="chat-container">
-        <h1>电子<span class="naya-name">Naya</span></h1>
-        <div class="chat-box" id="chat-box">
-            <div class="message naya-message">
-                <strong>Naya:</strong> 找我有什么事？（歪头看你）
+    <h1>电子Naya</h1>
+    <div id="chat-container">
+        <div id="chat-box">
+            <div class="message naya-message"><strong>Naya:</strong> 找我有什么事？（歪头看你）</div>
+            <div class="message naya-message" id="naya-action"></div>
         </div>
-        <div class="input-container">
-            <input type="text" id="user-input" placeholder="输入你的消息..." onkeydown="handleKeyPress(event)">
-            <button id="send-button" onclick="sendMessage()">发送</button>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="输入你的消息..." autocomplete="off">
+            <button id="send-button">发送</button>
         </div>
     </div>
     <script src="script.js"></script>
