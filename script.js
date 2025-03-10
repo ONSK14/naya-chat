@@ -36,7 +36,6 @@ const nayaActions = [
 // 生成 "此时 Naya 正在..."
 document.getElementById("naya-action").innerHTML = `<strong>Naya:</strong> 此时 Naya 正在${nayaActions[Math.floor(Math.random() * nayaActions.length)]}`;
 
-// 发送消息
 sendButton.addEventListener("click", sendMessage);
 userInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") sendMessage();
