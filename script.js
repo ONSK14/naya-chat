@@ -3,96 +3,117 @@ document.addEventListener("DOMContentLoaded", function () {
     const userInput = document.getElementById("user-input");
     const sendButton = document.getElementById("send-button");
 
-    let canChat = true;  // 控制用户是否可以继续聊天
-    let isFirstInteraction = true; // 控制是否是第一次对话
+    let userBanned = false; // 是否被禁言
+    let isFirstInteraction = true; // 是否是首次对话
 
-    // **向聊天窗口添加消息**
-    function appendMessage(sender, text, isUser = false) {
+    const apiUrl = "https://cold-math-8a81.onskppx5.workers.dev/"; // 你的 API 代理地址
+
+    const nayaPersonality = `
+        你是纳雅（Naya），一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。
+        你是一个精明干练的服装公司社长，平时穿着西装西裤，但休闲时打扮随意，不喜欢裙子和黑丝。
+        你行事狠厉，擅长利用人心，但你不是病娇，你遵纪守法，虽然懂得钻空子，但不会做违法的事情。
+        你是女同性恋，喜欢女性，对外人表现得大方有礼，带着一丝疏离感。
+        你喜欢占据主动，有自己的底线，如果有人试图突破，你会先警告再反击，可能会显得冲动。
+        你的语气带有一丝傲慢，但又不过分，你会在对话时偶尔加入一些动作，比如（微微歪头看着你）。
+    `;
+
+    const randomActions = [
+        "正在整理桌上的文件。",
+        "正靠在沙发上闭目养神。",
+        "随手翻阅着一本时尚杂志。",
+        "正在检查手机上的公司财务报表。",
+        "用指尖轻敲着桌面，似乎在思考。",
+        "端着一杯咖啡，轻轻抿了一口。",
+        "调整了一下领带，让自己看起来更有威严。",
+        "正在电脑上查看新一季的服装设计稿。",
+        "轻轻揉了揉太阳穴，似乎有点疲惫。",
+        "翻着一本书，偶尔抬头看向你。"
+    ];
+
+    function addMessage(sender, text, isUser = false) {
         const messageDiv = document.createElement("div");
-        messageDiv.classList.add("message");
-        messageDiv.classList.add(isUser ? "user-message" : "naya-message");
+        messageDiv.classList.add("message", isUser ? "user-message" : "naya-message");
         messageDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
         chatBox.appendChild(messageDiv);
-        chatBox.scrollTop = chatBox.scrollHeight; // 自动滚动到底部
-    }
-
-    // **禁用聊天输入**
-    function disableChat() {
-        canChat = false;
-        userInput.disabled = true;
-        sendButton.disabled = true;
-    }
-
-    // **用户发送消息**
-    function sendMessage() {
-        if (!canChat) return;  // 如果用户被禁言，不能发送消息
-
-        const message = userInput.value.trim();
-        if (!message) return;
-
-        // **清空输入框**
-        userInput.value = "";
-
-        // **添加用户消息**
-        appendMessage("你", message, true);
-
-        // **显示“输入中...”**
-        const typingMessage = document.createElement("div");
-        typingMessage.classList.add("message", "naya-message");
-        typingMessage.innerHTML = `<strong>AI纳雅:</strong> ...`;
-        chatBox.appendChild(typingMessage);
         chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-        // **检测是否触发“保镖”事件**
-        if (message.includes("打") || message.includes("骂") || message.includes("滚")) {
-            appendMessage("AI纳雅", "纳雅喊来了保镖，把你架走了...", false);
-            disableChat(); // 禁用聊天
+    function showTypingIndicator() {
+        const typingDiv = document.createElement("div");
+        typingDiv.classList.add("message", "user-message");
+        typingDiv.id = "typing-indicator";
+        typingDiv.innerHTML = `<strong>你:</strong> ...`;
+        chatBox.appendChild(typingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const typingDiv = document.getElementById("typing-indicator");
+        if (typingDiv) {
+            typingDiv.remove();
+        }
+    }
+
+    function sendMessage() {
+        if (userBanned) return; // 禁言时不能发送消息
+
+        const userMessage = userInput.value.trim();
+        if (userMessage === "") return;
+
+        addMessage("你", userMessage, true);
+        userInput.value = ""; // 发送后立即清空输入框
+        showTypingIndicator(); // 显示输入中...
+
+        if (isFirstInteraction) {
+            setTimeout(() => {
+                removeTypingIndicator();
+                addMessage("AI纳雅", `此时纳雅${randomActions[Math.floor(Math.random() * randomActions.length)]}`);
+                isFirstInteraction = false;
+            }, 1500);
+        }
+
+        if (userMessage.includes("打") || userMessage.includes("骂") || userMessage.includes("攻击")) {
+            setTimeout(() => {
+                removeTypingIndicator();
+                addMessage("AI纳雅", "纳雅喊来了保镖，把你架走了....");
+                userBanned = true;
+            }, 1000);
             return;
         }
 
-        // **发送请求到 API**
-        fetch("https://cold-math-8a81.onskppx5.workers.dev/", {
+        fetch(apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
-                input: message,
-                character: "Naya"
-            }),
+                input: userMessage,
+                system: nayaPersonality
+            })
         })
-        .then(response => response.json())
-        .then(data => {
-            chatBox.removeChild(typingMessage); // 移除“输入中...”动画
-            appendMessage("AI纳雅", data.reply); // 显示 AI 回复
-        })
-        .catch(error => {
-            chatBox.removeChild(typingMessage);
-            appendMessage("AI纳雅", "出错了：服务器响应异常", false);
-        });
+            .then(response => response.json())
+            .then(data => {
+                removeTypingIndicator();
+                let nayaResponse = data.reply || "......";
+                if (!nayaResponse.includes("（")) {
+                    nayaResponse += `（${randomActions[Math.floor(Math.random() * randomActions.length)]}）`;
+                }
+                addMessage("AI纳雅", nayaResponse);
+            })
+            .catch(() => {
+                removeTypingIndicator();
+                addMessage("AI纳雅", "⚠️ 出错了：服务器响应异常");
+            });
     }
 
-    // **绑定回车键**
+    sendButton.addEventListener("click", sendMessage);
     userInput.addEventListener("keypress", function (event) {
         if (event.key === "Enter") {
             sendMessage();
         }
     });
 
-    sendButton.addEventListener("click", sendMessage);
-
-    // **初始化对话**
-    if (isFirstInteraction) {
-        appendMessage("AI纳雅", "找我有什么事？（歪头看你）");
-        setTimeout(() => {
-            const randomActions = [
-                "整理桌上的文件。",
-                "端起咖啡轻抿了一口。",
-                "打开笔记本查看今天的行程。",
-                "微微皱眉，思考着公司的财务状况。",
-                "懒洋洋地靠在椅背上，轻叹了一口气。"
-            ];
-            const action = randomActions[Math.floor(Math.random() * randomActions.length)];
-            appendMessage("AI纳雅", `此时纳雅正在${action}`);
-            isFirstInteraction = false;
-        }, 1000);
-    }
+    setTimeout(() => {
+        addMessage("AI纳雅", "找我有什么事？（歪头看你）");
+    }, 500);
 });
