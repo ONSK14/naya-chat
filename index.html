@@ -22,19 +22,23 @@
             overflow-y: auto;
             max-height: 400px;
         }
-        .user-message {
-            background: #d4edda;
+        .user-message, .ai-message {
             padding: 10px;
             border-radius: 5px;
             margin: 5px 0;
+        }
+        .user-message {
+            background: #d4edda;
             text-align: right;
         }
         .ai-message {
             background: #f8d7da;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 5px 0;
             text-align: left;
+        }
+        #typingIndicator {
+            font-style: italic;
+            color: gray;
+            display: none;
         }
         input {
             width: 60%;
@@ -58,18 +62,40 @@
     <div id="chatBox">
         <p class="ai-message"><strong>AI纳雅:</strong> 找我有什么事？（歪头看你）</p>
     </div>
-    <input type="text" id="userInput" placeholder="输入你的消息...">
+    <p id="typingIndicator">纳雅正在输入...</p>
+    <input type="text" id="userInput" placeholder="输入你的消息..." onkeydown="handleKeyPress(event)">
     <button onclick="sendMessage()">发送</button>
 
     <script>
         const apiUrl = "https://api.deepseek.com/v1/chat/completions"; // DeepSeek API
         const apiKey = "sk-4dd324d0fdf849ebbec7e4692fde112a"; // 请替换为你的 DeepSeek API 密钥
 
+        let tokenUsed = 0;
+        const tokenLimit = 5000;
+        const tokenResetInterval = 60 * 60 * 1000; // 1小时清零
+
+        // 每小时重置 token 计数
+        setInterval(() => { tokenUsed = 0; }, tokenResetInterval);
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
         async function sendMessage() {
             const userInput = document.getElementById("userInput").value;
             const chatBox = document.getElementById("chatBox");
+            const typingIndicator = document.getElementById("typingIndicator");
 
             if (!userInput.trim()) return; // 防止发送空消息
+            if (tokenUsed >= tokenLimit) {
+                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> （皱眉）你今天的对话额度已经用完了。</p>`;
+                return;
+            }
+
+            // 清空输入框
+            document.getElementById("userInput").value = "";
 
             // 显示用户输入
             chatBox.innerHTML += `<p class="user-message"><strong>你:</strong> ${userInput}</p>`;
@@ -92,6 +118,8 @@
                 { role: "user", content: userInput }
             ];
 
+            typingIndicator.style.display = "block"; // 显示"输入中..."动画
+
             // 请求 DeepSeek API
             try {
                 const response = await fetch(apiUrl, {
@@ -109,15 +137,17 @@
 
                 const result = await response.json();
                 const aiReply = result.choices[0].message.content;
+                const tokenUsage = result.usage.total_tokens;
+
+                tokenUsed += tokenUsage; // 记录 token 用量
+                typingIndicator.style.display = "none"; // 隐藏"输入中..."动画
 
                 // 显示 AI 纳雅的回复
                 chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> ${aiReply}</p>`;
             } catch (error) {
                 chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> （皱眉）服务器似乎出了点问题……</p>`;
+                typingIndicator.style.display = "none"; // 隐藏"输入中..."动画
             }
-
-            // 清空输入框
-            document.getElementById("userInput").value = "";
         }
     </script>
 
