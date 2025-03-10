@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
-            color: #fff;
+            background-color: #121212;
+            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -19,68 +19,66 @@
         .chat-container {
             width: 90%;
             max-width: 600px;
-            background: #2c2c2c;
+            background: #1e1e1e;
             border-radius: 10px;
             padding: 15px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
         }
         .chat-box {
-            height: 400px;
+            flex-grow: 1;
             overflow-y: auto;
-            padding: 10px;
-            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
         }
         .message {
             padding: 10px;
-            border-radius: 8px;
+            border-radius: 5px;
             margin: 5px 0;
             max-width: 80%;
-            word-wrap: break-word;
-        }
-        .user-message {
-            background: #aaa;
-            align-self: flex-end;
-            text-align: right;
         }
         .naya-message {
-            background: #444;
+            background-color: #444;
             align-self: flex-start;
-            text-align: left;
         }
-        .typing-indicator {
-            display: none;
-            font-style: italic;
-            color: #ccc;
+        .user-message {
+            background-color: #ccc;
+            color: black;
+            align-self: flex-end;
         }
         .input-container {
             display: flex;
-            margin-top: 10px;
+            gap: 10px;
+            padding: 10px 0;
         }
         input {
-            flex: 1;
+            flex-grow: 1;
             padding: 10px;
-            border: none;
             border-radius: 5px;
-            outline: none;
+            border: none;
         }
         button {
-            background: #444;
+            background-color: #444;
             color: white;
             border: none;
             padding: 10px 15px;
             border-radius: 5px;
-            margin-left: 10px;
             cursor: pointer;
+        }
+        .typing-indicator {
+            display: none;
+            color: gray;
         }
     </style>
 </head>
 <body>
+    <h1>电子Naya</h1>
     <div class="chat-container">
-        <h2>电子Naya</h2>
         <div class="chat-box" id="chat-box">
             <div class="message naya-message">找我有什么事？</div>
         </div>
-        <div class="typing-indicator" id="typing">Naya 正在输入...</div>
+        <div class="typing-indicator" id="typing-indicator">Naya 正在输入...</div>
         <div class="input-container">
             <input type="text" id="user-input" placeholder="输入消息..." disabled>
             <button id="send-btn" disabled>发送</button>
@@ -88,75 +86,81 @@
     </div>
 
     <script>
-        const chatBox = document.getElementById("chat-box");
-        const userInput = document.getElementById("user-input");
-        const sendBtn = document.getElementById("send-btn");
-        const typingIndicator = document.getElementById("typing");
-        let tokensUsed = 0;
-        const tokenLimit = 5000;
-        let canSend = true;
+        const API_KEY = "sk-4dd324d0fdf849ebbec7e4692fde112a";
+        const SYSTEM_PROMPT = "你是Naya，一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。你是一个精明干练的服装公司社长...";
+        let totalTokens = 0;
+        const TOKEN_LIMIT = 5000;
+        let canSendMessage = true;
 
-        function appendMessage(text, isUser = false) {
-            const message = document.createElement("div");
-            message.classList.add("message", isUser ? "user-message" : "naya-message");
-            message.innerText = text;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+        document.getElementById("user-input").disabled = false;
+        document.getElementById("send-btn").disabled = false;
 
-        async function sendMessage() {
-            if (!canSend) return;
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            appendMessage(text, true);
-            userInput.value = "";
-            userInput.disabled = true;
-            sendBtn.disabled = true;
-            canSend = false;
-            typingIndicator.style.display = "block";
-
-            try {
-                const response = await fetch("https://api.deepseek.com/v1/chat", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": "Bearer sk-4dd324d0fdf849ebbec7e4692fde112a"
-                    },
-                    body: JSON.stringify({
-                        model: "deepseek-chat",
-                        messages: [{ role: "system", content: "你是Naya，一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。你是一个精明干练的服装公司社长...（完整人设）" }, { role: "user", content: text }]
-                    })
-                });
-                const data = await response.json();
-                typingIndicator.style.display = "none";
-                const reply = data.choices[0].message.content;
-                appendMessage(reply, false);
-                tokensUsed += reply.length;
-                if (tokensUsed >= tokenLimit) {
-                    appendMessage("Naya: 你已经超出了本小时的对话限制。", false);
-                    userInput.disabled = true;
-                    sendBtn.disabled = true;
-                } else {
-                    canSend = true;
-                    userInput.disabled = false;
-                    sendBtn.disabled = false;
-                }
-            } catch (error) {
-                typingIndicator.style.display = "none";
-                appendMessage("Naya: 发生了错误，请稍后再试。", false);
-                canSend = true;
-                userInput.disabled = false;
-                sendBtn.disabled = false;
-            }
-        }
-
-        userInput.addEventListener("keydown", function(event) {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
+        document.getElementById("send-btn").addEventListener("click", sendMessage);
+        document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") sendMessage();
         });
-        sendBtn.addEventListener("click", sendMessage);
+
+        function sendMessage() {
+            if (!canSendMessage) return;
+            
+            const userInput = document.getElementById("user-input");
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            canSendMessage = false;
+            userInput.disabled = true;
+            document.getElementById("send-btn").disabled = true;
+
+            const chatBox = document.getElementById("chat-box");
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "message user-message";
+            userMessageDiv.textContent = message;
+            chatBox.appendChild(userMessageDiv);
+            userInput.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            document.getElementById("typing-indicator").style.display = "block";
+            
+            fetch("https://api.deepseek.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "deepseek-chat",
+                    messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: message }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("typing-indicator").style.display = "none";
+                
+                const reply = data.choices[0].message.content;
+                totalTokens += data.usage.total_tokens;
+                if (totalTokens > TOKEN_LIMIT) {
+                    alert("已达到每小时最大Token限制。");
+                    return;
+                }
+                
+                const nayaMessageDiv = document.createElement("div");
+                nayaMessageDiv.className = "message naya-message";
+                nayaMessageDiv.textContent = reply;
+                chatBox.appendChild(nayaMessageDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                
+                canSendMessage = true;
+                userInput.disabled = false;
+                document.getElementById("send-btn").disabled = false;
+            })
+            .catch(error => {
+                console.error("请求错误:", error);
+                document.getElementById("typing-indicator").style.display = "none";
+                canSendMessage = true;
+                userInput.disabled = false;
+                document.getElementById("send-btn").disabled = false;
+            });
+        }
     </script>
 </body>
 </html>
