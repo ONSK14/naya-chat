@@ -1,100 +1,41 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI纳雅</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 20px;
-        }
-        #chat-container {
-            width: 100%;
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            overflow-y: auto;
-            max-height: 500px;
-        }
-        .message {
-            text-align: left;
-            padding: 8px;
-            border-radius: 8px;
-            margin: 8px 0;
-        }
-        .user {
-            background-color: #d1e7dd;
-            text-align: right;
-        }
-        .ai {
-            background-color: #f8d7da;
-        }
-        input {
-            width: 80%;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <h1>AI纳雅</h1>
-    <div id="chat-container"></div>
-    <input type="text" id="userInput" placeholder="输入你的消息..." />
-    <button onclick="sendMessage()">发送</button>
+const apiUrl = "https://api.deepseek.com/v1/chat/completions";
 
-    <script>
-        const apiUrl = "https://tight-unit-2177.onskppx5.workers.dev/api/generate"; // 你的 Cloudflare Workers 地址
+async function sendMessage() {
+    const userInput = document.getElementById("userInput").value;
+    const chatBox = document.getElementById("chatBox");
 
-        function appendMessage(text, sender) {
-            const chatContainer = document.getElementById("chat-container");
-            const messageDiv = document.createElement("div");
-            messageDiv.classList.add("message", sender);
-            messageDiv.textContent = text;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+    // 显示用户输入
+    chatBox.innerHTML += `<p><strong>你:</strong> ${userInput}</p>`;
 
-        async function sendMessage() {
-            const userInput = document.getElementById("userInput").value;
-            if (!userInput.trim()) return;
+    // 设定纳雅的人设
+    const systemPrompt = {
+        role: "system",
+        content: "你是naya，你是naya，naya是一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。工作时，穿着干练的西装西裤；休闲时则打扮得比较随意，但不喜欢裙子或黑丝。是一家小型服装公司的社长，这是父亲留给你的产业。母亲从小对你要求严格，而父亲在外养了小三，还生了其他孩子，因此你必须努力经营公司，才能在家族财产的争夺中占据一席之地。工作上，你行事狠厉，擅长利用人心，但本质上仍是一个普通女性，遵纪守法，虽然也懂得钻空子，却不是病娇类型。你喜欢女性，是个女同性恋。对外人你表现得大方有礼，看不出心机，却带着一丝疏离感。你喜欢在任何情况下占据主动，你有自己的底线，若有人试图突破，你会先警告再反击，这时可能会显得有些冲动。" 
+    };
 
-            appendMessage(userInput, "user"); // 显示用户消息
-            document.getElementById("userInput").value = "";
+    // 构造对话历史
+    const messages = [
+        systemPrompt,
+        { role: "user", content: userInput }
+    ];
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ input: userInput })
-                });
+    // 请求 AI API
+    const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer sk-4dd324d0fdf849ebbec7e4692fde112a"
+        },
+        body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: messages,
+            temperature: 0.7
+        })
+    });
 
-                if (!response.ok) {
-                    throw new Error("服务器响应异常");
-                }
+    const result = await response.json();
+    const aiReply = result.choices[0].message.content;
 
-                const data = await response.json();
-                appendMessage(data.response, "ai"); // 显示 AI 回复
-
-            } catch (error) {
-                appendMessage("⚠️ 出错了: " + error.message, "ai");
-            }
-        }
-    </script>
-</body>
-</html>
+    // 显示 AI 回复
+    chatBox.innerHTML += `<p><strong>AI纳雅:</strong> ${aiReply}</p>`;
+}
