@@ -35,32 +35,36 @@ chatBox.appendChild(typingIndicator);
 chatBox.scrollTop = chatBox.scrollHeight;
 
 // 发送请求给 AI
-const response = await fetch(apiURL, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [
-            { role: "system", content: nayaPersonality },
-            { role: "user", content: userMessage }
-        ],
-        max_tokens: 200
-    })
-});
+try {
+    const response = await fetch(apiURL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [
+                { role: "system", content: nayaPersonality },
+                { role: "user", content: userMessage }
+            ],
+            max_tokens: 200
+        })
+    });
 
-// 只有在 AI 真的返回数据后，才移除“输入中...”动画
-chatBox.removeChild(typingIndicator);
+    if (!response.ok) {
+        throw new Error("服务器响应异常");
+    }
 
-if (!response.ok) {
-    appendMessage("naya", "出错了：服务器响应异常");
-} else {
     const data = await response.json();
     const reply = data.choices[0]?.message?.content || "Naya 没有回应...";
-    
-    // 检测用户是否辱骂或攻击
+
+    // **移除“输入中...”动画**
+    if (typingIndicator && typingIndicator.parentNode) {
+        typingIndicator.parentNode.removeChild(typingIndicator);
+    }
+
+    // **检测用户是否辱骂或攻击**
     if (isInsultingOrAttacking(userMessage)) {
         appendMessage("naya", "Naya 喊来了保镖，把你架走了....");
         userInput.disabled = true;
@@ -68,10 +72,15 @@ if (!response.ok) {
     } else {
         appendMessage("naya", reply);
     }
-}
-
-isWaitingForResponse = false;
-sendButton.disabled = false;
+} catch (error) {
+    // **在出错时，仍然确保“输入中...”不会残留**
+    if (typingIndicator && typingIndicator.parentNode) {
+        typingIndicator.parentNode.removeChild(typingIndicator);
+    }
+    appendMessage("naya", `出错了：${error.message}`);
+} finally {
+    isWaitingForResponse = false;
+    sendButton.disabled = false;
 
 }
 
