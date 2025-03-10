@@ -20,11 +20,11 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .message {
+            display: flex;
+            align-items: flex-start;
             padding: 10px;
             margin: 10px;
             border-radius: 5px;
-            display: flex;
-            align-items: center;
             word-wrap: break-word;
         }
         .user {
@@ -35,6 +35,18 @@
             background: #444;
             color: white;
             justify-content: flex-start;
+        }
+        .message span.name {
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-right: 10px;
+            width: 50px;
+            text-align: right;
+            display: inline-block;
+        }
+        .message .content {
+            flex-grow: 1;
+            text-align: left;
         }
         #input-container {
             display: flex;
@@ -117,7 +129,18 @@
         function addMessage(content, sender) {
             let msg = document.createElement("div");
             msg.classList.add("message", sender);
-            msg.innerHTML = `<strong>${sender === "naya" ? "AI纳雅:" : "你:"}</strong> ${content}`;
+            
+            let nameSpan = document.createElement("span");
+            nameSpan.classList.add("name");
+            nameSpan.textContent = sender === "naya" ? "Naya" : "你";
+
+            let contentDiv = document.createElement("div");
+            contentDiv.classList.add("content");
+            contentDiv.innerHTML = content;
+
+            msg.appendChild(nameSpan);
+            msg.appendChild(contentDiv);
+
             chatContainer.appendChild(msg);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -143,14 +166,14 @@
 
             let loadingMsg = document.createElement("div");
             loadingMsg.classList.add("message", "naya");
-            loadingMsg.innerHTML = `<strong>AI纳雅:</strong> ...`;
+            loadingMsg.innerHTML = `<span class="name">Naya</span> <div class="content">...</div>`;
             chatContainer.appendChild(loadingMsg);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             const badWords = ["骂", "打", "踢", "攻击", "侮辱", "暴力", "殴打", "杀", "踹", "扇"];
             if (badWords.some(word => message.includes(word))) {
                 setTimeout(() => {
-                    loadingMsg.innerHTML = `<strong>AI纳雅:</strong> 纳雅喊来了保镖，把你架走了...`;
+                    loadingMsg.innerHTML = `<span class="name">Naya</span> <div class="content">纳雅喊来了保镖，把你架走了...</div>`;
                     userInput.disabled = true;
                     isBlocked = true;
                 }, 1000);
@@ -179,7 +202,7 @@
             })
             .catch(error => {
                 console.error("请求错误:", error);
-                loadingMsg.innerHTML = `<strong>AI纳雅:</strong> 出错了：服务器响应异常`;
+                loadingMsg.innerHTML = `<span class="name">Naya</span> <div class="content">出错了：服务器响应异常</div>`;
             });
         }
 
