@@ -7,225 +7,143 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
-            color: white;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             height: 100vh;
         }
-
         .chat-container {
-            width: 90%;
+            width: 100%;
             max-width: 600px;
-            background: #2a2a2a;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            height: 80vh;
-        }
-
-        .chat-header {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #444;
-        }
-
-        .chat-box {
-            flex-grow: 1;
             overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
+            flex-grow: 1;
         }
-
         .message {
-            max-width: 80%;
             padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            word-wrap: break-word;
+            border-radius: 5px;
+            margin: 5px 0;
+            max-width: 80%;
         }
-
-        .naya-message {
-            background-color: #444;
-            align-self: flex-start;
-        }
-
         .user-message {
-            background-color: #888;
+            background-color: #d3d3d3;
             align-self: flex-end;
+            text-align: right;
         }
-
-        .typing {
-            font-style: italic;
-            color: #aaa;
+        .naya-message {
+            background-color: #333;
+            color: white;
+            align-self: flex-start;
+            text-align: left;
         }
-
         .input-container {
             display: flex;
-            padding-top: 10px;
-            border-top: 2px solid #444;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 10px;
         }
-
         input {
             flex-grow: 1;
             padding: 10px;
-            border: none;
+            border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
         }
-
         button {
-            background-color: #444;
+            background-color: #333;
             color: white;
             border: none;
-            padding: 10px 15px;
-            margin-left: 10px;
-            border-radius: 5px;
+            padding: 10px;
+            margin-left: 5px;
             cursor: pointer;
+            border-radius: 5px;
         }
-
-        button:hover {
-            background-color: #555;
-        }
-
-        button:disabled {
-            background-color: #666;
-            cursor: not-allowed;
+        .typing-indicator {
+            display: none;
+            font-style: italic;
+            color: #666;
         }
     </style>
 </head>
 <body>
-
-    <div class="chat-container">
-        <div class="chat-header">电子Naya</div>
-        <div class="chat-box" id="chat-box">
-            <div class="message naya-message">找我有什么事？（歪头看你）</div>
-            <div class="message naya-message" id="naya-status"></div>
-        </div>
-        <div class="input-container">
-            <input type="text" id="user-input" placeholder="输入消息..." onkeydown="handleEnter(event)" disabled>
-            <button id="send-button" onclick="sendMessage()" disabled>发送</button>
-        </div>
+    <h1>电子Naya</h1>
+    <div class="chat-container" id="chat-container"></div>
+    <div class="typing-indicator" id="typing-indicator">Naya 正在输入...</div>
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="输入消息..." disabled>
+        <button onclick="sendMessage()">发送</button>
     </div>
-
     <script>
         const API_KEY = "sk-4dd324d0fdf849ebbec7e4692fde112a";
-        const MAX_TOKENS_PER_HOUR = 5000;
-        let usedTokens = 0;
-        let lastResetTime = Date.now();
-        let isWaitingForResponse = false;
+        let totalTokens = 0;
+        const TOKEN_LIMIT = 5000;
+        const chatContainer = document.getElementById("chat-container");
+        const userInput = document.getElementById("user-input");
+        const typingIndicator = document.getElementById("typing-indicator");
 
-        const characterSetting = `你是Naya，一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。
-你是一个精明干练的服装公司社长，平时穿着西装西裤，但休闲时打扮随意，不喜欢裙子和黑丝。
-你行事狠厉，擅长利用人心，但你不是病娇，你遵纪守法，虽然懂得钻空子，但不会做违法的事情。
-你喜欢女性，对外人表现得大方有礼，带着一丝疏离感。
-你喜欢占据主动，有自己的底线，如果有人试图突破，你会先警告再反击，可能会显得冲动。
-你的语气带有一丝傲慢，但又不过分，你会在对话时偶尔加入一些动作，在（）里表达动作，比如（微微歪头看着你）`;
-
-        function handleEnter(event) {
-            if (event.key === "Enter" && !isWaitingForResponse) {
-                sendMessage();
-            }
+        function addMessage(text, sender) {
+            let msgDiv = document.createElement("div");
+            msgDiv.classList.add("message", sender === "user" ? "user-message" : "naya-message");
+            msgDiv.innerText = text;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        function sendMessage() {
-            if (isWaitingForResponse) return;
-
-            const userInput = document.getElementById("user-input");
-            const sendButton = document.getElementById("send-button");
-            const chatBox = document.getElementById("chat-box");
-            const message = userInput.value.trim();
-            if (!message) return;
-
+        async function sendMessage() {
+            let message = userInput.value.trim();
+            if (!message || userInput.disabled) return;
             userInput.value = "";
             userInput.disabled = true;
-            sendButton.disabled = true;
-            isWaitingForResponse = true;
+            addMessage(message, "user");
+            typingIndicator.style.display = "block";
 
-            const userMessage = document.createElement("div");
-            userMessage.classList.add("message", "user-message");
-            userMessage.textContent = message;
-            chatBox.appendChild(userMessage);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            const typingIndicator = document.createElement("div");
-            typingIndicator.classList.add("message", "typing");
-            typingIndicator.textContent = "Naya 正在输入...";
-            chatBox.appendChild(typingIndicator);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            const now = Date.now();
-            if (now - lastResetTime >= 3600000) {
-                usedTokens = 0;
-                lastResetTime = now;
-            }
-
-            if (usedTokens >= MAX_TOKENS_PER_HOUR) {
-                chatBox.removeChild(typingIndicator);
-                const limitMessage = document.createElement("div");
-                limitMessage.classList.add("message", "naya-message");
-                limitMessage.textContent = "对不起，你的 token 已用完，请稍后再试。";
-                chatBox.appendChild(limitMessage);
-                chatBox.scrollTop = chatBox.scrollHeight;
-                userInput.disabled = false;
-                sendButton.disabled = false;
-                isWaitingForResponse = false;
-                return;
-            }
-
-            fetch("https://api.deepseek.com/chat", {
+            let response = await fetch("https://api.deepseek.com/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: "deepseek-chat",
-                    messages: [{ role: "system", content: characterSetting }, { role: "user", content: message }],
-                    max_tokens: 100
+                    model: "deepseek",
+                    messages: [{ role: "system", content: "你是Naya，一只皮毛光滑水润的黑色女性狼兽人..." },
+                               { role: "user", content: message }],
+                    max_tokens: 200
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                usedTokens += 100;
-                chatBox.removeChild(typingIndicator);
-
-                const reply = data.choices[0].message.content;
-                const nayaMessage = document.createElement("div");
-                nayaMessage.classList.add("message", "naya-message");
-                nayaMessage.textContent = reply;
-                chatBox.appendChild(nayaMessage);
-                chatBox.scrollTop = chatBox.scrollHeight;
-
-                userInput.disabled = false;
-                sendButton.disabled = false;
-                isWaitingForResponse = false;
-            })
-            .catch(error => {
-                chatBox.removeChild(typingIndicator);
-                const errorMessage = document.createElement("div");
-                errorMessage.classList.add("message", "naya-message");
-                errorMessage.textContent = "发生错误，请稍后再试。";
-                chatBox.appendChild(errorMessage);
-                chatBox.scrollTop = chatBox.scrollHeight;
-
-                userInput.disabled = false;
-                sendButton.disabled = false;
-                isWaitingForResponse = false;
             });
+
+            let data = await response.json();
+            typingIndicator.style.display = "none";
+
+            if (data.choices && data.choices[0].message) {
+                let reply = data.choices[0].message.content;
+                addMessage(reply, "naya");
+                totalTokens += data.usage.total_tokens;
+                if (totalTokens >= TOKEN_LIMIT) {
+                    userInput.placeholder = "已达最大额度，请稍后再试";
+                    userInput.disabled = true;
+                } else {
+                    userInput.disabled = false;
+                }
+            }
         }
 
-        const nayaActions = ["正在整理设计图", "在喝咖啡", "翻阅服装杂志", "审阅财务报告"];
-        document.getElementById("naya-status").textContent = `此时 Naya ${nayaActions[Math.floor(Math.random() * nayaActions.length)]}……`;
-    </script>
+        function firstMessage() {
+            addMessage("找我有什么事？（歪头看你）", "naya");
+            setTimeout(() => {
+                const actions = ["喝着咖啡", "整理文件", "打电话", "看着窗外", "思考设计方案"];
+                let randomAction = actions[Math.floor(Math.random() * actions.length)];
+                addMessage(`此时Naya正在${randomAction}。`, "naya");
+                userInput.disabled = false;
+            }, 2000);
+        }
 
+        firstMessage();
+    </script>
 </body>
 </html>
