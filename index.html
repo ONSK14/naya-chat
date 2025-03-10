@@ -4,20 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>电子Naya</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 500px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+        }
+        .user-message {
+            align-self: flex-end;
+            background: #dcdcdc;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background: #444;
+            color: white;
+        }
+        .input-container {
+            display: flex;
+            border-top: 1px solid #ccc;
+            padding: 10px;
+            background: white;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-left: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .typing-indicator {
+            color: gray;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
-    <h1>电子Naya</h1>
-    <div id="chat-container">
-        <div id="chat-box">
-            <div class="message naya-message"><strong>Naya:</strong> 找我有什么事？（歪头看你）</div>
-            <div class="message naya-message" id="naya-action"></div>
+    <div class="chat-container">
+        <div class="messages" id="chat-messages">
+            <div class="message bot-message">Naya: 找我有什么事？（歪头看你）</div>
+            <div class="message bot-message" id="status-message">Naya: 此时Naya正在整理公司文件...</div>
         </div>
-        <div id="input-container">
-            <input type="text" id="user-input" placeholder="输入你的消息..." autocomplete="off">
-            <button id="send-button">发送</button>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="输入消息..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">发送</button>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        const API_KEY = "sk-4dd324d0fdf849ebbec7e4692fde112a";
+        const TOKEN_LIMIT = 5000;
+        let tokensUsed = 0;
+        let messages = [
+            { role: "system", content: `你是Naya，一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发...` }
+        ];
+        
+        function sendMessage() {
+            const inputField = document.getElementById("user-input");
+            let text = inputField.value.trim();
+            if (!text || tokensUsed >= TOKEN_LIMIT) return;
+            
+            addMessage("You", text, "user-message");
+            inputField.value = "";
+            
+            document.getElementById("chat-messages").innerHTML += `<div class='typing-indicator'>Naya 正在输入...</div>`;
+            
+            fetch("https://api.deepseek.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "deepseek-chat",
+                    messages: [...messages, { role: "user", content: text }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector(".typing-indicator").remove();
+                let reply = data.choices?.[0]?.message?.content || "...";
+                addMessage("Naya", reply, "bot-message");
+                messages.push({ role: "user", content: text }, { role: "assistant", content: reply });
+                tokensUsed += data.usage.total_tokens;
+            })
+            .catch(console.error);
+        }
+        
+        function addMessage(sender, text, className) {
+            const messageContainer = document.getElementById("chat-messages");
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message", className);
+            msgDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            messageContainer.appendChild(msgDiv);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+        
+        setInterval(() => tokensUsed = 0, 60 * 60 * 1000);
+    </script>
 </body>
 </html>
