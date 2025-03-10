@@ -16,10 +16,10 @@
     <input type="text" id="userInput" placeholder="输入你的话...">
     <button onclick="sendMessage()">发送</button>
 
-    <!-- 确保 script 代码放在 body 末尾 -->
+    <!-- ✅ JavaScript 代码必须放在 body 末尾 -->
     <script>
         function sendMessage() {
-            console.log("✅ sendMessage() 被调用了"); // 调试信息
+            console.log("✅ sendMessage() 被调用了");
             let input = document.getElementById("userInput").value;
             document.getElementById("userInput").value = "";
 
@@ -41,4 +41,3 @@
     </script>
 </body>
 </html>
-
