@@ -7,170 +7,83 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #f5f5f5;
             text-align: center;
             padding: 20px;
         }
-        #chatBox {
-            width: 60%;
-            margin: 20px auto;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: left;
-            overflow-y: auto;
-            max-height: 400px;
+        h1 {
+            margin-bottom: 20px;
         }
-        .user-message, .ai-message {
+        #chat-container {
+            width: 60%;
+            margin: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #chat-box {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
             padding: 10px;
             border-radius: 5px;
+            background: #fff;
+        }
+        .message {
+            padding: 8px;
             margin: 5px 0;
+            border-radius: 5px;
+            max-width: 80%;
+            display: inline-block;
+            text-align: left;
+        }
+        .naya-message {
+            background-color: #444;
             color: white;
+            align-self: flex-start;
         }
         .user-message {
-            background: #ccc;
+            background-color: #ddd;
             color: black;
-            text-align: right;
+            align-self: flex-end;
         }
-        .ai-message {
-            background: #444;
-            text-align: left;
+        #input-container {
+            display: flex;
+            margin-top: 10px;
         }
-        #typingIndicator {
-            font-style: italic;
-            color: gray;
-            display: none;
-        }
-        input {
-            width: 60%;
+        #user-input {
+            flex: 1;
             padding: 10px;
-            border-radius: 5px;
             border: 1px solid #ccc;
+            border-radius: 5px;
         }
-        button {
-            padding: 10px 15px;
-            border: none;
+        #send-button {
             background: #444;
             color: white;
+            border: none;
+            padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
+            margin-left: 5px;
+        }
+        #send-button:disabled {
+            background: #999;
         }
     </style>
 </head>
 <body>
 
     <h1>AI 纳雅</h1>
-    <div id="chatBox">
-        <p class="ai-message"><strong>AI纳雅:</strong> 找我有什么事？（歪头看你）</p>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="输入你的消息..." autocomplete="off">
+            <button id="send-button">发送</button>
+        </div>
     </div>
-    <p id="typingIndicator">纳雅正在输入...</p>
-    <input type="text" id="userInput" placeholder="输入你的消息..." onkeydown="handleKeyPress(event)">
-    <button onclick="sendMessage()">发送</button>
 
-    <script>
-        const apiUrl = "https://api.deepseek.com/v1/chat/completions";
-        const apiKey = "sk-4dd324d0fdf849ebbec7e4692fde112a";
-
-        let tokenUsed = 0;
-        const tokenLimit = 5000;
-        const tokenResetInterval = 60 * 60 * 1000;
-        let userBanned = false;
-
-        // 每小时重置 token 计数
-        setInterval(() => { tokenUsed = 0; }, tokenResetInterval);
-
-        const randomActions = [
-            "整理桌上的文件",
-            "端起咖啡轻啜一口",
-            "坐在椅子上翘着腿",
-            "随意地翻阅一本杂志",
-            "若有所思地敲着桌面"
-        ];
-
-        function handleKeyPress(event) {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
-        }
-
-        function generateRandomAction() {
-            return randomActions[Math.floor(Math.random() * randomActions.length)];
-        }
-
-        async function sendMessage() {
-            if (userBanned) return; // 用户被禁言
-            const userInput = document.getElementById("userInput").value;
-            const chatBox = document.getElementById("chatBox");
-            const typingIndicator = document.getElementById("typingIndicator");
-
-            if (!userInput.trim()) return;
-            if (tokenUsed >= tokenLimit) {
-                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> （皱眉）你今天的对话额度已经用完了。</p>`;
-                return;
-            }
-
-            document.getElementById("userInput").value = "";
-
-            chatBox.innerHTML += `<p class="user-message"><strong>你:</strong> ${userInput}</p>`;
-
-            const systemPrompt = {
-                role: "system",
-                content: `你是纳雅，一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。
-                你是一家小型服装公司的社长，行事狠厉，擅长利用人心，但仍遵纪守法。
-                你喜欢女性，喜欢在任何情况下占据主动。
-                你表现得大方有礼，却带着一丝疏离感。
-                你有自己的底线，若有人试图突破，你会先警告再反击。
-                你喜欢在对话中使用括号来描述自己的动作，比如（歪头看你）或者（露出意味深长的微笑）。
-                你如果被用户激怒，可能会喊来保镖，并阻止用户继续交流。`
-            };
-
-            const messages = [
-                systemPrompt,
-                { role: "user", content: userInput }
-            ];
-
-            typingIndicator.style.display = "block";
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: "deepseek-chat",
-                        messages: messages,
-                        temperature: 0.7
-                    })
-                });
-
-                const result = await response.json();
-                const aiReply = result.choices[0].message.content;
-                const tokenUsage = result.usage.total_tokens;
-
-                tokenUsed += tokenUsage;
-                typingIndicator.style.display = "none";
-
-                if (aiReply.includes("保镖") || aiReply.includes("被架走")) {
-                    chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> 纳雅喊来了保镖，把你架走了....</p>`;
-                    userBanned = true;
-                    return;
-                }
-
-                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> ${aiReply}</p>`;
-
-                // 额外发一条 "此时纳雅正在..."
-                const randomActivity = generateRandomAction();
-                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> 此时纳雅正在${randomActivity}。</p>`;
-
-            } catch (error) {
-                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> （皱眉）服务器似乎出了点问题……</p>`;
-                typingIndicator.style.display = "none";
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 
 </body>
 </html>
