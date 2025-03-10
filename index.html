@@ -1,40 +1,125 @@
-const apiUrl = "https://api.deepseek.com/v1/chat/completions";
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 纳雅</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        #chatBox {
+            width: 60%;
+            margin: 20px auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        .user-message {
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            text-align: right;
+        }
+        .ai-message {
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            text-align: left;
+        }
+        input {
+            width: 60%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
 
-async function sendMessage() {
-    const userInput = document.getElementById("userInput").value;
-    const chatBox = document.getElementById("chatBox");
+    <h1>AI 纳雅</h1>
+    <div id="chatBox">
+        <p class="ai-message"><strong>AI纳雅:</strong> 找我有什么事？（歪头看你）</p>
+    </div>
+    <input type="text" id="userInput" placeholder="输入你的消息...">
+    <button onclick="sendMessage()">发送</button>
 
-    // 显示用户输入
-    chatBox.innerHTML += `<p><strong>你:</strong> ${userInput}</p>`;
+    <script>
+        const apiUrl = "https://api.deepseek.com/v1/chat/completions"; // DeepSeek API
+        const apiKey = "sk-4dd324d0fdf849ebbec7e4692fde112a"; // 请替换为你的 DeepSeek API 密钥
 
-    // 设定纳雅的人设
-    const systemPrompt = {
-        role: "system",
-        content: "你是naya，你是naya，naya是一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。工作时，穿着干练的西装西裤；休闲时则打扮得比较随意，但不喜欢裙子或黑丝。是一家小型服装公司的社长，这是父亲留给你的产业。母亲从小对你要求严格，而父亲在外养了小三，还生了其他孩子，因此你必须努力经营公司，才能在家族财产的争夺中占据一席之地。工作上，你行事狠厉，擅长利用人心，但本质上仍是一个普通女性，遵纪守法，虽然也懂得钻空子，却不是病娇类型。你喜欢女性，是个女同性恋。对外人你表现得大方有礼，看不出心机，却带着一丝疏离感。你喜欢在任何情况下占据主动，你有自己的底线，若有人试图突破，你会先警告再反击，这时可能会显得有些冲动。"  };
+        async function sendMessage() {
+            const userInput = document.getElementById("userInput").value;
+            const chatBox = document.getElementById("chatBox");
 
-    // 构造对话历史
-    const messages = [
-        systemPrompt,
-        { role: "user", content: userInput }
-    ];
+            if (!userInput.trim()) return; // 防止发送空消息
 
-    // 请求 AI API
-    const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer sk-4dd324d0fdf849ebbec7e4692fde112a"
-        },
-        body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: messages,
-            temperature: 0.7
-        })
-    });
+            // 显示用户输入
+            chatBox.innerHTML += `<p class="user-message"><strong>你:</strong> ${userInput}</p>`;
 
-    const result = await response.json();
-    const aiReply = result.choices[0].message.content;
+            // 设定纳雅的人设
+            const systemPrompt = {
+                role: "system",
+                content: `你是纳雅，一只皮毛光滑水润的黑色女性狼兽人，拥有一头白色长发，偶尔会束起来。
+                你是一家小型服装公司的社长，行事狠厉，擅长利用人心，但仍遵纪守法。
+                你是一个女同性恋，喜欢女性，喜欢在任何情况下占据主动。
+                你表现得大方有礼，却带着一丝疏离感。
+                你有自己的底线，若有人试图突破，你会先警告再反击。
+                你喜欢在对话中使用括号来描述自己的动作，比如（歪头看你）或者（露出意味深长的微笑）。
+                现在请你以纳雅的身份，回答用户的问题。`
+            };
 
-    // 显示 AI 回复
-    chatBox.innerHTML += `<p><strong>AI纳雅:</strong> ${aiReply}</p>`;
-}
+            // 构造对话历史
+            const messages = [
+                systemPrompt,
+                { role: "user", content: userInput }
+            ];
+
+            // 请求 DeepSeek API
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: messages,
+                        temperature: 0.7
+                    })
+                });
+
+                const result = await response.json();
+                const aiReply = result.choices[0].message.content;
+
+                // 显示 AI 纳雅的回复
+                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> ${aiReply}</p>`;
+            } catch (error) {
+                chatBox.innerHTML += `<p class="ai-message"><strong>AI纳雅:</strong> （皱眉）服务器似乎出了点问题……</p>`;
+            }
+
+            // 清空输入框
+            document.getElementById("userInput").value = "";
+        }
+    </script>
+
+</body>
+</html>
