@@ -28,49 +28,51 @@ async function sendMessage() {
     appendMessage("user", userMessage);
 
     // 显示“输入中...”动画
-    const typingIndicator = document.createElement("div");
-    typingIndicator.classList.add("message", "naya-message");
-    typingIndicator.innerHTML = "<strong>Naya:</strong> ...";
-    chatBox.appendChild(typingIndicator);
-    chatBox.scrollTop = chatBox.scrollHeight;
+const typingIndicator = document.createElement("div");
+typingIndicator.classList.add("message", "naya-message", "typing");
+typingIndicator.innerHTML = "<strong>Naya:</strong> ...";
+chatBox.appendChild(typingIndicator);
+chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 发送请求给 AI
-    const response = await fetch(apiURL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-                { role: "system", content: nayaPersonality },
-                { role: "user", content: userMessage }
-            ],
-            max_tokens: 200
-        })
-    });
+// 发送请求给 AI
+const response = await fetch(apiURL, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+            { role: "system", content: nayaPersonality },
+            { role: "user", content: userMessage }
+        ],
+        max_tokens: 200
+    })
+});
 
-    chatBox.removeChild(typingIndicator); // 移除“输入中...”动画
+// 只有在 AI 真的返回数据后，才移除“输入中...”动画
+chatBox.removeChild(typingIndicator);
 
-    if (!response.ok) {
-        appendMessage("naya", "出错了：服务器响应异常");
+if (!response.ok) {
+    appendMessage("naya", "出错了：服务器响应异常");
+} else {
+    const data = await response.json();
+    const reply = data.choices[0]?.message?.content || "Naya 没有回应...";
+    
+    // 检测用户是否辱骂或攻击
+    if (isInsultingOrAttacking(userMessage)) {
+        appendMessage("naya", "Naya 喊来了保镖，把你架走了....");
+        userInput.disabled = true;
+        sendButton.disabled = true;
     } else {
-        const data = await response.json();
-        const reply = data.choices[0]?.message?.content || "Naya 没有回应...";
-        
-        // 侦测辱骂或物理攻击，强制踢出
-        if (isInsultingOrAttacking(userMessage)) {
-            appendMessage("naya", "Naya 喊来了保镖，把你架走了....");
-            userInput.disabled = true;
-            sendButton.disabled = true;
-        } else {
-            appendMessage("naya", reply);
-        }
+        appendMessage("naya", reply);
     }
+}
 
-    isWaitingForResponse = false;
-    sendButton.disabled = false;
+isWaitingForResponse = false;
+sendButton.disabled = false;
+
 }
 
 // 追加消息
