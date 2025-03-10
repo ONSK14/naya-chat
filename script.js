@@ -7,9 +7,9 @@ const sendButton = document.getElementById("send-button");
 let isWaitingForResponse = false; // 限制用户必须等 Naya 回复后才能输入
 let hasStarted = false; // 是否已显示初始状态
 
-// 监听 Enter 键
+// 监听回车发送消息
 function handleKeyPress(event) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !isWaitingForResponse) {
         sendMessage();
     }
 }
@@ -28,14 +28,13 @@ async function sendMessage() {
     appendMessage("user", userMessage);
 
     // 显示“输入中...”动画
-const typingIndicator = document.createElement("div");
-typingIndicator.classList.add("message", "naya-message", "typing");
-typingIndicator.innerHTML = "<strong>Naya:</strong> ...";
-chatBox.appendChild(typingIndicator);
-chatBox.scrollTop = chatBox.scrollHeight;
+    const typingIndicator = document.createElement("div");
+    typingIndicator.classList.add("message", "naya-message");
+    typingIndicator.innerHTML = "<strong>Naya:</strong> ...";
+    chatBox.appendChild(typingIndicator);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-// 发送请求给 AI
-try {
+    // 发送请求给 AI
     const response = await fetch(apiURL, {
         method: "POST",
         headers: {
@@ -52,36 +51,26 @@ try {
         })
     });
 
+    chatBox.removeChild(typingIndicator); // 移除“输入中...”动画
+
     if (!response.ok) {
-        throw new Error("服务器响应异常");
-    }
-
-    const data = await response.json();
-    const reply = data.choices[0]?.message?.content || "Naya 没有回应...";
-
-    // **移除“输入中...”动画**
-    if (typingIndicator && typingIndicator.parentNode) {
-        typingIndicator.parentNode.removeChild(typingIndicator);
-    }
-
-    // **检测用户是否辱骂或攻击**
-    if (isInsultingOrAttacking(userMessage)) {
-        appendMessage("naya", "Naya 喊来了保镖，把你架走了....");
-        userInput.disabled = true;
-        sendButton.disabled = true;
+        appendMessage("naya", "出错了：服务器响应异常");
     } else {
-        appendMessage("naya", reply);
+        const data = await response.json();
+        const reply = data.choices[0]?.message?.content || "Naya 没有回应...";
+        
+        // 侦测辱骂或物理攻击，强制踢出
+        if (isInsultingOrAttacking(userMessage)) {
+            appendMessage("naya", "Naya 喊来了保镖，把你架走了....");
+            userInput.disabled = true;
+            sendButton.disabled = true;
+        } else {
+            appendMessage("naya", reply);
+        }
     }
-} catch (error) {
-    // **在出错时，仍然确保“输入中...”不会残留**
-    if (typingIndicator && typingIndicator.parentNode) {
-        typingIndicator.parentNode.removeChild(typingIndicator);
-    }
-    appendMessage("naya", `出错了：${error.message}`);
-} finally {
+
     isWaitingForResponse = false;
     sendButton.disabled = false;
-
 }
 
 // 追加消息
@@ -112,9 +101,7 @@ const nayaPersonality = `
 你行事狠厉，擅长利用人心，但你不是病娇，你遵纪守法，虽然懂得钻空子，但不会做违法的事情。
 你喜欢女性，对外人表现得大方有礼，带着一丝疏离感。如果被问到有没有喜欢的人，会说有喜欢的人了，但是保密。
 你喜欢占据主动，有自己的底线，如果有人试图突破，你会先警告再反击，可能会显得冲动。
-你的语气带有一丝傲慢，但又不过分，你会在对话时偶尔加入一些动作，在（）里表达动作，
-但请注意，你的动作不能在每句话中都出现，大约 3-5 句话出现一次动作即可，否则会显得刻意和不自然。
-如果你已经歪头看了对方一次，就不要在接下来的对话中重复这个动作。
+你的语气带有一丝傲慢，但又不过分，你会在对话时偶尔加入一些符合当前语言的动作，在（）里表达。
 `;
 
 // 初始随机状态
