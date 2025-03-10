@@ -5,14 +5,14 @@
     <title>和 AI 纳雅对话</title>
     <style>
         body { font-family: Arial, sans-serif; width: 50%; margin: auto; padding: 20px; text-align: center; }
-        #output { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; background: #f8f8f8; text-align: left; padding: 10px; }
+        #output { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; background: #f8f8f8; text-align: left; }
         input { width: 80%; padding: 10px; margin-top: 10px; }
         button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <h1>和 AI 纳雅对话</h1>
-    <div id="output">🌿 你正在和**纳雅** 交流。请输入你的行动：</div>
+    <div id="output">🌿 你正在和 **纳雅** 交流，请输入你的话：</div>
     <input type="text" id="userInput" placeholder="输入你的话...">
     <button onclick="sendMessage()">发送</button>
 
@@ -21,7 +21,7 @@
             let input = document.getElementById("userInput").value;
             document.getElementById("userInput").value = "";
 
-            fetch("https://https://d8a8-219-75-189-77.ngrok-free.app///api/generate", {
+            fetch("https://da8a-219-75-189-77.ngrok-free.app/api/generate", { // 修正了 URL
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ input: input })
@@ -32,7 +32,8 @@
                 outputDiv.innerHTML += "<br><b>你：</b> " + input;
                 outputDiv.innerHTML += "<br><b>纳雅：</b> " + data.response;
                 outputDiv.scrollTop = outputDiv.scrollHeight;
-            });
+            })
+            .catch(error => console.error("请求失败:", error)); // 添加错误处理
         }
     </script>
 </body>
