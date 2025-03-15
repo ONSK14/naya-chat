@@ -279,7 +279,7 @@
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${API_KEY}`
                 },
-                body: JSON.stringify({ model: "deepseek-chat", messages: conversation, max_tokens: 30, temperature: 0.5 }) /* 模型名和maxtokens */
+                body: JSON.stringify({ model: "deepseek-chat", messages: conversation, max_tokens: 200, temperature: 0.5 }) /* 模型名和maxtokens */
             })
             .then(response => response.json())
             .then(data => {
