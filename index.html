@@ -277,7 +277,7 @@
 
            
             let estimatedTokens = message.length / 4;
-            if (userTokenUsage + estimatedTokens > 800) {
+            if (userTokenUsage + estimatedTokens > 3000) {
                 appendMessage("naya-message", "你已经超出了每小时的对话上限。");
                 return;
             }
@@ -294,7 +294,7 @@
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${API_KEY}`
                 },
-                body: JSON.stringify({ model: "deepseek-chat", messages: conversation, max_tokens: 400, temperature: 0.5 }) /* 模型名和maxtokens */
+                body: JSON.stringify({ model: "deepseek-chat", messages: conversation, max_tokens: 400, temperature: 1.3 }) /* 模型名和maxtokens */
             })
             .then(response => response.json())
             .then(data => {
